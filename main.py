@@ -16,10 +16,10 @@ class TinyPhotoshop:
             return
 
         # Load the selected image using PIL
-        self.image = Image.open(file_path)
+        self.original_image = Image.open(file_path)
 
         # Convert the image to a format that can be displayed in Tkinter
-        self.original_photo_image = ImageTk.PhotoImage(self.image)
+        self.original_photo_image = ImageTk.PhotoImage(self.original_image)
 
         # If an image is already displayed, remove it before displaying a new one
         if hasattr(self, 'original_image_label'):
@@ -30,7 +30,7 @@ class TinyPhotoshop:
         self.original_image_label.pack(side="left", padx=50, pady=10)
 
         # Adjust the size of image_frame to fit the image
-        self.image_frame.configure(width=self.image.width, height=self.image.height)
+        self.image_frame.configure(width=self.original_image.width, height=self.original_image.height)
 
     def parse_bmp_file(self):
         pass
@@ -41,7 +41,7 @@ class TinyPhotoshop:
     def save_transformed_image(self):
         # Check if there is a transformed image to save
         if not hasattr(self, 'transformed_image'):
-            messagebox.showerror("Error", "No transformed image to save.")
+            messagebox.showerror("Error", "No transformed image to save")
             return
 
         # Open a "Save As" dialog
@@ -52,8 +52,19 @@ class TinyPhotoshop:
         # Save the transformed image
         self.transformed_image.save(file_path, "BMP")
 
+    def update_original_image_display(self, image):
+        # Convert the image to a format that can be displayed in Tkinter
+        self.original_photo_image = ImageTk.PhotoImage(image)
 
-    def update_display(self, transformed_image):
+        # If an image is already displayed, remove it before displaying a new one
+        if hasattr(self, 'original_image_label'):
+            self.original_image_label.destroy()
+
+        # Display the image in the image_frame
+        self.original_image_label = ttk.Label(self.image_frame, image=self.original_photo_image)
+        self.original_image_label.pack(side="left", padx=50, pady=10)
+
+    def update_transformed_image_display(self, transformed_image):
         # Convert the PIL image to a format that can be displayed in Tkinter
         self.transformed_photo_image = ImageTk.PhotoImage(transformed_image)
 
@@ -64,31 +75,62 @@ class TinyPhotoshop:
         self.transformed_image_label = ttk.Label(self.image_frame, image=self.transformed_photo_image)
         self.transformed_image_label.pack(side="right", padx=50, pady=10)
 
-    def convert_to_grayscale(self):
-        if not hasattr(self, 'image'):
-            messagebox.showerror("Error", "Please upload an image first.")
+    def convert_to_grayscale(self, do_update_original_label = False):
+        if not hasattr(self, 'original_image'):
+            messagebox.showerror("Error", "Please upload an image first")
             return
 
         # Convert the PIL image to a NumPy array
-        image_array = np.array(self.image)
+        image_array = np.array(self.original_image)
 
         # Ensure the image is in RGB format
         if len(image_array.shape) == 3 and image_array.shape[2] == 3:
             # Apply the luminosity method to convert to grayscale
             grayscale_array = np.dot(image_array[...,:3], [0.299, 0.587, 0.114])
         else:
-            messagebox.showerror("Error", "Image is not in RGB format or already grayscale.")
+            messagebox.showerror("Error", "Image is not in RGB format or already grayscale")
             return
 
         # The result will be a 2D array, so we need to convert it to an 8-bit grayscale image
         grayscale_image = Image.fromarray(np.uint8(grayscale_array))
         self.transformed_image = grayscale_image
-
-        self.update_display(self.transformed_image)
-
+        
+        if do_update_original_label:
+            self.update_original_image_display(self.transformed_image)
+        else:
+            self.update_original_image_display(self.original_image)
+            self.update_transformed_image_display(self.transformed_image)
+        
+        return grayscale_image
 
     def perform_ordered_dithering(self):
-        pass
+        if not hasattr(self, 'original_image'):
+            messagebox.showerror("Error", "Please upload an image first.")
+            return
+        
+        # Ensure the image is grayscale for dithering; convert if not
+        grayscale_image = self.convert_to_grayscale(True)
+        grayscale_array = np.array(grayscale_image)
+
+        # Normalized Bayer 4x4 matrix
+        bayer_matrix = np.array([[ 1,  9,  3, 11],
+                                [13,  5, 15,  7],
+                                [ 4, 12,  2, 10],
+                                [16,  8, 14,  6]]) / 16.0
+
+        # Scale the Bayer matrix to the size of the image
+        threshold_matrix = np.tile(bayer_matrix, (grayscale_array.shape[0] // 4, grayscale_array.shape[1] // 4))
+
+        # Apply ordered dithering
+        dithered_image_array = grayscale_array > (threshold_matrix * 255)
+        
+        # Convert back to a PIL image
+        dithered_image = Image.fromarray(np.uint8(dithered_image_array) * 255)
+        self.transformed_image = dithered_image
+
+        self.update_transformed_image_display(self.transformed_image)
+        
+        return dithered_image
 
     def perform_autolevel(self):
         pass
@@ -108,8 +150,8 @@ class TinyPhotoshop:
         self.create_image_display_area()
 
     def create_banner(self):
-        self.banner = ttk.Label(self.root, text="Welcome to Tiny Photoshop! Upload a file and use the functionalities by clicking on the buttons below.",
-                               background="silver", foreground="black", anchor="center", padding=20, relief="raised", font=("Helvetica", 14))
+        self.banner = ttk.Label(self.root, text="Welcome to Tiny Photoshop! \nUpload a file and use the functionalities by clicking on the buttons below \nImplemented by Shubham Bhatia (301562778) for CMPT 820",
+                               background="silver", foreground="black", anchor="center", justify="center", padding=20, relief="raised", font=("Helvetica", 14))
         self.banner.pack(side="top", fill="x")
 
     def create_menu(self):
