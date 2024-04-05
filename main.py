@@ -3,6 +3,7 @@ from tkinter import ttk, filedialog, messagebox
 from PIL import Image, ImageTk
 import numpy as np
 
+
 class TinyPhotoshop:
 
     def __init__(self, root):
@@ -133,7 +134,39 @@ class TinyPhotoshop:
         return dithered_image
 
     def perform_autolevel(self):
-        pass
+        if not hasattr(self, 'original_image'):
+            messagebox.showerror("Error", "Please upload an image first")
+            return
+
+        image_array = np.array(self.original_image).astype('float')
+        auto_level_array = np.zeros(image_array.shape)
+
+        # processing each channel of color image independently
+        if len(image_array.shape) == 3:
+            for channel in range(image_array.shape[2]):
+                min_val = np.min(image_array[..., channel])
+                max_val = np.max(image_array[..., channel])
+
+                # to prevent division by zero if image has only one solid colour
+                if min_val == max_val:
+                    auto_level_array[..., channel] = image_array[..., channel]
+                else:
+                    #stretch the pixel value range of the channel
+                    auto_level_array[..., channel] = 255 * (image_array[..., channel] - min_val) / (max_val - min_val)
+        # to take care of grayscale images
+        else:
+            min_val = np.min(image_array)
+            max_val = np.max(image_array)
+            
+            if min_val == max_val:
+                auto_level_array = image_array
+            else:
+                auto_level_array = 255 * (image_array - min_val) / (max_val - min_val)
+
+        auto_leveled_image = Image.fromarray(auto_level_array.astype('uint8'))
+        self.transformed_image = auto_leveled_image
+
+        self.update_transformed_image_display(self.transformed_image)
 
     def get_huffman_metrics(self):
         pass
