@@ -2,10 +2,9 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from PIL import Image, ImageTk
 import numpy as np
-
+from tinyps_utils import calculate_entropy, get_avg_code_length
 
 class TinyPhotoshop:
-
     def __init__(self, root):
         self.root = root
         self.setup_ui()
@@ -106,7 +105,7 @@ class TinyPhotoshop:
 
     def perform_ordered_dithering(self):
         if not hasattr(self, 'original_image'):
-            messagebox.showerror("Error", "Please upload an image first.")
+            messagebox.showerror("Error", "Please upload an image first")
             return
         
         # Ensure the image is grayscale for dithering; convert if not
@@ -168,8 +167,19 @@ class TinyPhotoshop:
 
         self.update_transformed_image_display(self.transformed_image)
 
+    def update_metrics_display(self, entropy, avg_huffman_length):
+        messagebox.showinfo("Huffman Coding Metrics", f"Huffman Coding Metrics:\nEntropy: {entropy:.2f} bits\nAverage Huffman Code Length: {avg_huffman_length:.2f} bits")
+
     def get_huffman_metrics(self):
-        pass
+        if not hasattr(self, 'original_image'):
+            messagebox.showerror("Error", "Please upload an image first")
+            return
+        
+        grayscale_image = self.convert_to_grayscale()
+        grayscale_array = np.array(grayscale_image)
+        entropy = calculate_entropy(grayscale_array)
+        avg_code_length = get_avg_code_length(grayscale_array)
+        self.update_metrics_display(entropy=entropy, avg_huffman_length=avg_code_length)
 
     def convert_to_negative(self):
         pass
@@ -183,7 +193,7 @@ class TinyPhotoshop:
         self.create_image_display_area()
 
     def create_banner(self):
-        self.banner = ttk.Label(self.root, text="Welcome to Tiny Photoshop! \nUpload a file and use the functionalities by clicking on the buttons below \nImplemented by Shubham Bhatia (301562778) for CMPT 820",
+        self.banner = ttk.Label(self.root, text="Welcome to Tiny Photoshop! \nUpload a file and use the functionalities by clicking on the buttons below", #\nImplemented by Shubham Bhatia (301562778) for CMPT 820
                                background="silver", foreground="black", anchor="center", justify="center", padding=20, relief="raised", font=("Helvetica", 14))
         self.banner.pack(side="top", fill="x")
 
