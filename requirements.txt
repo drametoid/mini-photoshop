@@ -1,0 +1,15 @@
+attrs==23.2.0
+certifi==2024.2.2
+charset-normalizer==3.3.2
+click==8.1.7
+colour==0.1.5
+idna==3.6
+labels==20.1.0
+numpy==1.26.4
+opencv-python==4.9.0.80
+pillow==10.2.0
+pytoml==0.1.21
+requests==2.31.0
+scipy==1.12.0
+tkmacosx==1.0.5
+urllib3==2.2.1
