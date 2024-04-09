@@ -11,7 +11,13 @@ class TinyPhotoshop:
         self.current_rotation_angle = 0
 
     def upload_image(self):
-        f_types = [("Bitmap files", "*.bmp")]
+        f_types = [
+            ("Bitmap Files", "*.bmp"),
+            ("JPEG Files", "*.jpeg"),
+            ("JPG Files", "*.jpg"),
+            ("PNG Files", "*.png")
+        ]
+
         file_path = filedialog.askopenfilename(filetypes=f_types)
         if not file_path:  # If the user cancels the dialog, file_path will be an empty string
             return
